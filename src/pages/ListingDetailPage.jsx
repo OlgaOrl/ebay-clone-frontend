@@ -29,19 +29,10 @@ const ListingDetailPage = () => {
     };
 
     const getImageUrl = (image) => {
-        if (!image) return null;
+        if (!image || !image.url) return null;
 
-        // If it's an external URL (starts with http/https)
-        if (image.url && (image.url.startsWith('http://') || image.url.startsWith('https://'))) {
-            return image.url;
-        }
-
-        // If it's a local file (starts with /uploads)
-        if (image.url && image.url.startsWith('/uploads')) {
-            return `http://localhost:3000${image.url}`;
-        }
-
-        return null;
+        // Return URL as is (without modifications)
+        return image.url;
     };
 
     const handleDelete = async () => {
