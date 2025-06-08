@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://olga-orlova.me';
+const API_BASE_URL = '/api'; // using proxy
 
-// Создаем экземпляр axios
+// Create axios instance
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {
@@ -10,7 +10,7 @@ const api = axios.create({
     },
 });
 
-// Добавляем токен к запросам если он есть
+// Add token to requests if available
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -19,7 +19,7 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// API методы
+// API methods
 export const authAPI = {
     login: (email, password) => api.post('/sessions', { email, password }),
 };
@@ -34,12 +34,30 @@ export const usersAPI = {
 export const listingsAPI = {
     getAll: (params) => api.get('/listings', { params }),
     create: (listingData) => api.post('/listings', listingData),
+    createWithImages: (formData) => {
+        return api.post('/listings', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
     getById: (id) => api.get(`/listings/${id}`),
     update: (id, listingData) => api.patch(`/listings/${id}`, listingData),
+    updateWithImages: (id, formData) => {
+        return api.patch(`/listings/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
     delete: (id) => api.delete(`/listings/${id}`),
 };
 
 export const ordersAPI = {
-    getAll: (params) => api.get('/orders', { params }),
-    create: (orderData) => api.post('/orders', orderData),
+    getAll: () => api.get('/orders'),
+    create: (data) => api.post('/orders', data),
+    getById: (id) => api.get(`/orders/${id}`),
+    update: (id, data) => api.patch(`/orders/${id}`, data),
+    cancel: (id, data) => api.patch(`/orders/${id}/cancel`, data),
+    updateStatus: (id, data) => api.patch(`/orders/${id}/status`, data)
 };

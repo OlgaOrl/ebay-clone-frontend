@@ -6,6 +6,7 @@ const UserProfilePage = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [authChecking, setAuthChecking] = useState(true);
     const [editing, setEditing] = useState(false);
     const [formData, setFormData] = useState({
         username: '',
@@ -18,12 +19,14 @@ const UserProfilePage = () => {
             navigate('/login');
             return;
         }
+
+        setAuthChecking(false);
         fetchUser();
-    }, []);
+    }, [navigate]);
 
     const fetchUser = async () => {
         try {
-            // В реальном приложении ID получать из токена
+            // In real app, get ID from token
             const response = await usersAPI.getById(1);
             setUser(response.data);
             setFormData({
@@ -61,7 +64,15 @@ const UserProfilePage = () => {
         }
     };
 
-    if (loading) return <div className="text-center py-8">Loading...</div>;
+    // Show loading while checking authorization
+    if (authChecking) {
+        return <div className="text-center py-8">Checking authorization...</div>;
+    }
+
+    // Show loading while fetching user data
+    if (loading) {
+        return <div className="text-center py-8">Loading user data...</div>;
+    }
 
     return (
         <div className="max-w-2xl mx-auto">
