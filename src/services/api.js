@@ -8,6 +8,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    timeout: 10000, // 10 second timeout
 });
 
 // Add token to requests if available
@@ -16,8 +17,42 @@ api.interceptors.request.use((config) => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Log the request for debugging
+    console.log('API Request:', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        fullURL: `${config.baseURL}${config.url}`,
+        headers: config.headers,
+        data: config.data
+    });
+    
     return config;
 });
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+    (response) => {
+        console.log('API Response:', {
+            status: response.status,
+            url: response.config.url,
+            data: response.data
+        });
+        return response;
+    },
+    (error) => {
+        console.error('API Error:', {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            url: error.config?.url,
+            method: error.config?.method?.toUpperCase(),
+            data: error.response?.data,
+            message: error.message
+        });
+        return Promise.reject(error);
+    }
+);
 
 // API methods
 export const authAPI = {
@@ -25,7 +60,10 @@ export const authAPI = {
 };
 
 export const usersAPI = {
-    create: (userData) => api.post('/users', userData),
+    create: (userData) => {
+        console.log('Creating user with data:', userData);
+        return api.post('/users', userData);
+    },
     getById: (id) => api.get(`/users/${id}`),
     update: (id, userData) => api.patch(`/users/${id}`, userData),
     delete: (id) => api.delete(`/users/${id}`),

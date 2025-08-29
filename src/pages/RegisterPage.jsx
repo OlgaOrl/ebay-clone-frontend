@@ -45,20 +45,30 @@ const RegisterPage = () => {
             return;
         }
 
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email.trim())) {
+            setError('Please enter a valid email address');
+            setLoading(false);
+            return;
+        }
+
         try {
+            const registrationData = {
+                username: formData.username.trim(),
+                email: formData.email.trim().toLowerCase(),
+                password: formData.password
+            };
+
             console.log('Attempting registration with:', {
-                username: formData.username,
-                email: formData.email,
+                username: registrationData.username,
+                email: registrationData.email,
                 password: '***'
             });
 
-            const response = await usersAPI.create({
-                username: formData.username.trim(),
-                email: formData.email.trim(),
-                password: formData.password
-            });
+            const response = await usersAPI.create(registrationData);
 
-            console.log('Registration response:', response);
+            console.log('Registration successful:', response);
             
             setSuccess(true);
             setError('');
@@ -67,14 +77,14 @@ const RegisterPage = () => {
             setTimeout(() => {
                 navigate('/login', { 
                     state: { 
-                        message: 'Registration successful! Please log in with your credentials.' 
+                        message: 'Registration successful! Please log in with your credentials.',
+                        email: registrationData.email
                     }
                 });
             }, 2000);
 
         } catch (error) {
             console.error('Registration error:', error);
-            console.error('Error response:', error.response);
             
             // Handle different error scenarios
             if (error.response) {
@@ -82,21 +92,37 @@ const RegisterPage = () => {
                 const status = error.response.status;
                 const errorData = error.response.data;
                 
-                if (status === 409) {
-                    setError('An account with this email already exists');
-                } else if (status === 400) {
-                    setError(errorData.error || 'Invalid registration data');
-                } else if (status === 422) {
-                    setError(errorData.error || 'Validation failed');
-                } else {
-                    setError(errorData.error || `Registration failed (${status})`);
+                console.error('Error response data:', errorData);
+                console.error('Error status:', status);
+                
+                switch (status) {
+                    case 400:
+                        setError(errorData.error || 'Invalid registration data. Please check your input.');
+                        break;
+                    case 405:
+                        setError('Registration service temporarily unavailable. Please try again later.');
+                        console.error('405 Method Not Allowed - Check if the API endpoint exists and accepts POST requests');
+                        break;
+                    case 409:
+                        setError('An account with this email already exists. Please use a different email or try logging in.');
+                        break;
+                    case 422:
+                        setError(errorData.error || 'Validation failed. Please check your input.');
+                        break;
+                    case 500:
+                        setError('Server error. Please try again later.');
+                        break;
+                    default:
+                        setError(errorData.error || `Registration failed (Error ${status}). Please try again.`);
                 }
             } else if (error.request) {
                 // Network error
-                setError('Network error. Please check your connection and try again.');
+                console.error('Network error:', error.request);
+                setError('Network error. Please check your internet connection and try again.');
             } else {
                 // Other error
-                setError('Registration failed. Please try again.');
+                console.error('Unexpected error:', error.message);
+                setError('An unexpected error occurred. Please try again.');
             }
         } finally {
             setLoading(false);
@@ -113,6 +139,9 @@ const RegisterPage = () => {
                             Registration Successful!
                         </h2>
                         <p className="mt-2 text-sm text-gray-600">
+                            Your account has been created successfully.
+                        </p>
+                        <p className="mt-1 text-sm text-gray-600">
                             Redirecting you to login page...
                         </p>
                     </div>
@@ -137,15 +166,24 @@ const RegisterPage = () => {
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                            {error}
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                            <div className="flex">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <p className="text-sm">{error}</p>
+                                </div>
+                            </div>
                         </div>
                     )}
                     
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                Username
+                                Username *
                             </label>
                             <input
                                 id="username"
@@ -157,12 +195,13 @@ const RegisterPage = () => {
                                 value={formData.username}
                                 onChange={handleChange}
                                 disabled={loading}
+                                autoComplete="username"
                             />
                         </div>
                         
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email address
+                                Email address *
                             </label>
                             <input
                                 id="email"
@@ -180,7 +219,7 @@ const RegisterPage = () => {
                         
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Password
+                                Password *
                             </label>
                             <input
                                 id="password"
@@ -194,6 +233,9 @@ const RegisterPage = () => {
                                 onChange={handleChange}
                                 disabled={loading}
                             />
+                            <p className="mt-1 text-xs text-gray-500">
+                                Password must be at least 6 characters long
+                            </p>
                         </div>
                     </div>
 
@@ -201,7 +243,7 @@ const RegisterPage = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                         >
                             {loading ? (
                                 <>
@@ -212,6 +254,12 @@ const RegisterPage = () => {
                                 'Create account'
                             )}
                         </button>
+                    </div>
+
+                    <div className="text-center">
+                        <p className="text-xs text-gray-500">
+                            By creating an account, you agree to our Terms of Service and Privacy Policy.
+                        </p>
                     </div>
                 </form>
             </div>
