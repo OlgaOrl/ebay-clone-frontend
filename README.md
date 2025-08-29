@@ -26,7 +26,7 @@ npm install
 ```bash
 cp .env.example .env
 # The .env file is already configured for production deployment
-# API URL: https://ebayclone.olga-orlova.me:3000
+# API URL: https://ebayclone.olga-orlova.me
 ```
 
 4. Start the development server:
@@ -43,9 +43,9 @@ The built files will be in the dist/ directory.
 
 ## API Integration
 This frontend connects to the eBay Clone API running on the production server.
-**Production API URL:** https://ebayclone.olga-orlova.me:3000
+**Production API URL:** https://ebayclone.olga-orlova.me
 
 **Note:** This configuration is set for production deployment. Local development will connect to the remote API server.
 
 ## Deployment
-The application is configured to connect to the production API server at https://ebayclone.olga-orlova.me:3000
+The application is configured to connect to the production API server at https://ebayclone.olga-orlova.me

@@ -16,7 +16,7 @@ const Footer = () => {
                     </a>
                     <span className="hidden sm:block text-gray-400 text-lg">|</span>
                     <a
-                        href="https://github.com/OlgaOrl/ebay-clone-backend"
+                        href="https://github.com/OlgaOrl/ebay-clone-api"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-400 hover:text-blue-300 transition-colors duration-200 font-medium flex items-center gap-3"
