@@ -12,10 +12,27 @@ const ListingDetailPage = () => {
     const [orderLoading, setOrderLoading] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
         fetchListing().catch(console.error);
+        fetchCurrentUser().catch(console.error);
     }, [id]);
+
+    const fetchCurrentUser = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            // Assuming user ID is stored in token or we have a way to get current user
+            // For now, using hardcoded user ID 1 as seen in handleOrder
+            setCurrentUser({ id: 1 });
+        } catch (error) {
+            console.error('Failed to fetch current user:', error);
+        }
+    };
+
+    const isOwner = currentUser && listing && listing.userId === currentUser.id;
 
     const fetchListing = async () => {
         try {
@@ -217,16 +234,20 @@ const ListingDetailPage = () => {
                     </div>
 
                     <div className="flex gap-2 ml-4">
-                        <Link to={`/listings/${id}/edit`} className="btn btn-secondary">
-                            Edit Listing
-                        </Link>
-                        <button
-                            onClick={handleDelete}
-                            disabled={deleteLoading}
-                            className="btn bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            {deleteLoading ? 'Deleting...' : 'Delete Listing'}
-                        </button>
+                        {isOwner && (
+                            <>
+                                <Link to={`/listings/${id}/edit`} className="btn btn-secondary">
+                                    Edit Listing
+                                </Link>
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={deleteLoading}
+                                    className="btn bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                    {deleteLoading ? 'Deleting...' : 'Delete Listing'}
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 

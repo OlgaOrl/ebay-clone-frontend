@@ -6,6 +6,7 @@ const ListingsPage = () => {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [currentUser, setCurrentUser] = useState(null);
 
     const fetchListings = async () => {
         try {
@@ -22,8 +23,21 @@ const ListingsPage = () => {
         }
     };
 
+    const fetchCurrentUser = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            // Using hardcoded user ID 1 for now
+            setCurrentUser({ id: 1 });
+        } catch (error) {
+            console.error('Failed to fetch current user:', error);
+        }
+    };
+
     useEffect(() => {
         fetchListings().catch(console.error);
+        fetchCurrentUser().catch(console.error);
     }, []);
 
     const getImageUrl = (image) => {
@@ -143,17 +157,27 @@ const ListingsPage = () => {
                                 {listing.description}
                             </p>
 
-                            {/* Price and Button */}
+                            {/* Price and Buttons */}
                             <div className="flex justify-between items-center">
                                 <span className="text-xl font-bold text-green-600">
                                     ${listing.price}
                                 </span>
-                                <Link
-                                    to={`/listings/${listing.id}`}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors duration-200"
-                                >
-                                    View Details
-                                </Link>
+                                <div className="flex gap-2">
+                                    <Link
+                                        to={`/listings/${listing.id}`}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors duration-200"
+                                    >
+                                        View Details
+                                    </Link>
+                                    {currentUser && listing.userId === currentUser.id && (
+                                        <Link
+                                            to={`/listings/${listing.id}/edit`}
+                                            className="bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors duration-200"
+                                        >
+                                            Edit
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

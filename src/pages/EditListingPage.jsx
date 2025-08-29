@@ -14,15 +14,40 @@ const EditListingPage = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
+        fetchCurrentUser().catch(console.error);
         fetchListing().catch(console.error);
     }, [id]);
+
+    const fetchCurrentUser = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
+        try {
+            // Using hardcoded user ID 1 for now
+            setCurrentUser({ id: 1 });
+        } catch (error) {
+            console.error('Failed to fetch current user:', error);
+            navigate('/login');
+        }
+    };
 
     const fetchListing = async () => {
         try {
             const response = await listingsAPI.getById(id);
             const listingData = response.data;
+            
+            // Check if current user owns this listing
+            if (currentUser && listingData.userId !== currentUser.id) {
+                setError('You are not authorized to edit this listing');
+                return;
+            }
+            
             setListing(listingData);
             setFormData({
                 title: listingData.title,
