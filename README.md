@@ -15,7 +15,7 @@ A modern web application for buying and selling items online, built with React a
 ```bash
 git clone <your-repository-url>
 cd ebay-clone-frontend
-````
+```
 
 2. Install dependencies:
 ```bash
@@ -25,18 +25,27 @@ npm install
 3. Configure environment variables:
 ```bash
 cp .env.example .env
-Edit .env file and set your API URL if different from default.
+# The .env file is already configured for production deployment
+# API URL: https://ebayclone.olga-orlova.me:3000
 ```
+
 4. Start the development server:
 ```bash
 npm run dev
 ```
 The application will be available at http://localhost:5173
-# Build for Production
+
+## Build for Production
 ```bash
 npm run build
 ```
 The built files will be in the dist/ directory.
-API Integration
-This frontend connects to the eBay Clone API. Make sure the API server is running and accessible.
-Default API URL: https://olga-orlova.me
+
+## API Integration
+This frontend connects to the eBay Clone API running on the production server.
+**Production API URL:** https://ebayclone.olga-orlova.me:3000
+
+**Note:** This configuration is set for production deployment. Local development will connect to the remote API server.
+
+## Deployment
+The application is configured to connect to the production API server at https://ebayclone.olga-orlova.me:3000

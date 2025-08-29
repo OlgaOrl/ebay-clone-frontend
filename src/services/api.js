@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use environment variable or fallback to proxy in development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Use environment variable or fallback to production server
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ebayclone.olga-orlova.me:3000';
 
 console.log('API Base URL:', API_BASE_URL);
 
