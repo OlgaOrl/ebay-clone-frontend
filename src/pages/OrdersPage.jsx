@@ -15,33 +15,37 @@ const OrdersPage = () => {
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            console.log('Fetching all orders...');
+            setError('');
+            console.log('Fetching orders...');
+            
             const response = await ordersAPI.getAll();
-            console.log('Orders response:', response);
-            console.log('Orders data:', response.data);
-            console.log('Is response.data an array?', Array.isArray(response.data));
-
-            // Обработка разных форматов ответа от сервера
+            console.log('Orders API response:', response);
+            
+            // Handle the response properly - expect orders array directly or in data.orders
             let ordersArray = [];
-            if (Array.isArray(response.data)) {
-                ordersArray = response.data;
-            } else if (response.data && Array.isArray(response.data.orders)) {
-                ordersArray = response.data.orders;
-            } else if (response.data && typeof response.data === 'object') {
-                // Если это объект с заказами, преобразуем в массив
-                console.log('Response data keys:', Object.keys(response.data));
-                ordersArray = Object.values(response.data).filter(item =>
-                    item && typeof item === 'object' && item.id
-                );
+            if (response.data) {
+                if (Array.isArray(response.data)) {
+                    ordersArray = response.data;
+                } else if (response.data.orders && Array.isArray(response.data.orders)) {
+                    ordersArray = response.data.orders;
+                } else if (typeof response.data === 'object') {
+                    // If it's a single order object, wrap in array
+                    ordersArray = [response.data];
+                }
             }
-
+            
             console.log('Final orders array:', ordersArray);
             setOrders(ordersArray);
-            setError('');
         } catch (error) {
             console.error('Error fetching orders:', error);
+            if (error.response?.status === 401) {
+                // Unauthorized - redirect to login
+                localStorage.removeItem('token');
+                navigate('/login');
+                return;
+            }
             setError('Failed to load orders');
-            setOrders([]);
+            setOrders([]); // Ensure empty array on error
         } finally {
             setLoading(false);
         }
@@ -49,7 +53,6 @@ const OrdersPage = () => {
 
     const handleViewDetails = (orderId) => {
         console.log('View Details clicked for order ID:', orderId);
-        console.log('Order ID type:', typeof orderId);
         navigate(`/orders/${orderId}`);
     };
 
@@ -62,39 +65,42 @@ const OrdersPage = () => {
             console.log('Cancelling order with ID:', orderId);
             await ordersAPI.cancel(orderId, { cancelReason: 'Customer request' });
             alert('Order cancelled successfully!');
-            // Обновить список заказов
+            // Refresh orders list
             fetchOrders();
         } catch (error) {
             console.error('Error cancelling order:', error);
+            if (error.response?.status === 401) {
+                localStorage.removeItem('token');
+                navigate('/login');
+                return;
+            }
             alert('Failed to cancel order. Please try again.');
         }
     };
 
-    const getStatusColor = (status) => {
-        const colors = {
-            pending: 'bg-yellow-100 text-yellow-800',
-            confirmed: 'bg-blue-100 text-blue-800',
-            shipped: 'bg-purple-100 text-purple-800',
-            delivered: 'bg-green-100 text-green-800',
-            cancelled: 'bg-red-100 text-red-800'
-        };
-        return colors[status] || 'bg-gray-100 text-gray-800';
-    };
-
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        return new Date(dateString).toLocaleDateString();
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'pending': return 'text-yellow-600 bg-yellow-100';
+            case 'confirmed': return 'text-blue-600 bg-blue-100';
+            case 'shipped': return 'text-purple-600 bg-purple-100';
+            case 'delivered': return 'text-green-600 bg-green-100';
+            case 'cancelled': return 'text-red-600 bg-red-100';
+            default: return 'text-gray-600 bg-gray-100';
+        }
     };
 
     if (loading) {
         return (
-            <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">Loading orders...</p>
+            <div className="max-w-4xl mx-auto py-8">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading orders...</p>
+                </div>
             </div>
         );
     }
@@ -138,70 +144,72 @@ const OrdersPage = () => {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {orders.map((order) => {
-                        console.log('Rendering order:', order); // Debug log
-                        return (
-                            <div key={order.id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                <div className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center space-x-4">
-                                            <h3 className="text-lg font-semibold text-gray-900">
-                                                Order #{order.id}
-                                            </h3>
-                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                                                {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
-                                            </span>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-lg font-bold text-gray-900">
-                                                €{order.totalPrice || '0.00'}
-                                            </div>
-                                            <div className="text-sm text-gray-500">
-                                                {formatDate(order.createdAt)}
-                                            </div>
-                                        </div>
+                    {orders.map((order) => (
+                        <div key={order.id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <div className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900">
+                                            Order #{order.id}
+                                        </h3>
+                                        <p className="text-sm text-gray-500">
+                                            Listing ID: {order.listingId}
+                                        </p>
                                     </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Listing ID</p>
-                                            <p className="font-medium">{order.listingId || 'N/A'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Quantity</p>
-                                            <p className="font-medium">{order.quantity || 'N/A'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Order Date</p>
-                                            <p className="font-medium">{formatDate(order.createdAt)}</p>
-                                        </div>
+                                    <div className="text-right">
+                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                                            {order.status}
+                                        </span>
+                                        <p className="text-lg font-bold text-gray-900 mt-1">
+                                            ${order.totalPrice?.toFixed(2) || '0.00'}
+                                        </p>
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                                        <div className="text-sm text-gray-500">
-                                            Order placed on {formatDate(order.createdAt)}
-                                        </div>
-                                        <div className="flex space-x-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <p className="text-sm text-gray-600">
+                                            <span className="font-medium">Quantity:</span> {order.quantity || 1}
+                                        </p>
+                                        {order.shippingAddress && (
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Shipping to:</span> {order.shippingAddress.city}, {order.shippingAddress.country}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        {order.buyerNotes && (
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">Notes:</span> {order.buyerNotes}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                    <div className="text-sm text-gray-500">
+                                        Order placed on {formatDate(order.createdAt)}
+                                    </div>
+                                    <div className="flex space-x-3">
+                                        <button
+                                            onClick={() => handleViewDetails(order.id)}
+                                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                        >
+                                            View Details
+                                        </button>
+                                        {(order.status === 'pending' || order.status === 'confirmed') && (
                                             <button
-                                                onClick={() => handleViewDetails(order.id)}
-                                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                onClick={() => handleCancelOrder(order.id)}
+                                                className="text-red-600 hover:text-red-800 text-sm font-medium"
                                             >
-                                                View Details
+                                                Cancel Order
                                             </button>
-                                            {(order.status === 'pending' || order.status === 'confirmed') && (
-                                                <button
-                                                    onClick={() => handleCancelOrder(order.id)}
-                                                    className="text-red-600 hover:text-red-800 text-sm font-medium"
-                                                >
-                                                    Cancel Order
-                                                </button>
-                                            )}
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                        );
-                    })}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
