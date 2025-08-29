@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { usersAPI } from '../services/api';
+import { usersAPI, healthAPI } from '../services/api';
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -12,6 +12,21 @@ const RegisterPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [testingConnection, setTestingConnection] = useState(false);
+
+    // Add connection test function for debugging
+    const testConnection = async () => {
+        setTestingConnection(true);
+        try {
+            await healthAPI.check();
+            alert('API connection successful!');
+        } catch (error) {
+            console.error('Connection test failed:', error);
+            alert(`Connection test failed: ${error.message}`);
+        } finally {
+            setTestingConnection(false);
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({
@@ -94,14 +109,21 @@ const RegisterPage = () => {
                 
                 console.error('Error response data:', errorData);
                 console.error('Error status:', status);
+                console.error('Error config:', error.config);
                 
                 switch (status) {
                     case 400:
                         setError(errorData.error || 'Invalid registration data. Please check your input.');
                         break;
+                    case 404:
+                        setError('Registration endpoint not found. Please contact support.');
+                        console.error('404 - API endpoint not found. Check if /users endpoint exists on the server.');
+                        break;
                     case 405:
-                        setError('Registration service temporarily unavailable. Please try again later.');
-                        console.error('405 Method Not Allowed - Check if the API endpoint exists and accepts POST requests');
+                        setError('Registration method not allowed. Please contact support.');
+                        console.error('405 Method Not Allowed - Check if the API endpoint accepts POST requests');
+                        console.error('Attempted URL:', error.config?.url);
+                        console.error('Base URL:', error.config?.baseURL);
                         break;
                     case 409:
                         setError('An account with this email already exists. Please use a different email or try logging in.');
@@ -116,9 +138,20 @@ const RegisterPage = () => {
                         setError(errorData.error || `Registration failed (Error ${status}). Please try again.`);
                 }
             } else if (error.request) {
-                // Network error
-                console.error('Network error:', error.request);
-                setError('Network error. Please check your internet connection and try again.');
+                // Network error - request was made but no response received
+                console.error('Network error details:', {
+                    request: error.request,
+                    code: error.code,
+                    message: error.message
+                });
+                
+                if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+                    setError('Cannot connect to server. Please check your internet connection or try again later.');
+                } else if (error.code === 'ENOTFOUND') {
+                    setError('Server not found. Please contact support.');
+                } else {
+                    setError('Network error. Please check your internet connection and try again.');
+                }
             } else {
                 // Other error
                 console.error('Unexpected error:', error.message);
@@ -163,6 +196,18 @@ const RegisterPage = () => {
                             sign in to your existing account
                         </Link>
                     </p>
+                    
+                    {/* Debug connection test button - remove in production */}
+                    <div className="mt-4 text-center">
+                        <button
+                            type="button"
+                            onClick={testConnection}
+                            disabled={testingConnection}
+                            className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded"
+                        >
+                            {testingConnection ? 'Testing...' : 'Test API Connection'}
+                        </button>
+                    </div>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     {error && (
