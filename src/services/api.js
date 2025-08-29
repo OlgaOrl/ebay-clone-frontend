@@ -75,6 +75,12 @@ export const usersAPI = {
     getById: (id) => api.get(`/users/${id}`),
     update: (id, userData) => api.patch(`/users/${id}`, userData),
     delete: (id) => api.delete(`/users/${id}`),
+    
+    // Profile-specific endpoints
+    getProfile: () => api.get('/profile'),
+    getMe: () => api.get('/users/me'),
+    updateProfile: (userData) => api.patch('/profile', userData),
+    deleteProfile: () => api.delete('/profile'),
 };
 
 export const listingsAPI = {
