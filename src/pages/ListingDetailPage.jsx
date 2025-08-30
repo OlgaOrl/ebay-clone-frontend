@@ -123,14 +123,15 @@ const ListingDetailPage = () => {
                 return;
             }
 
-            // Format shipping address as required by backend
-            const shippingAddress = `${shippingData.fullName}\n${shippingData.street}\n${shippingData.city}\n${shippingData.country}`;
-
-            // Create order data with all required fields
+            // Create order data with nested shippingAddress structure
             const orderData = {
                 listingId: parseInt(listing.id),
                 quantity: parseInt(orderQuantity) || 1,
-                shippingAddress: shippingAddress
+                shippingAddress: {
+                    street: shippingData.street.trim(),
+                    city: shippingData.city.trim(),
+                    country: shippingData.country.trim()
+                }
             };
 
             console.log('Order request data:', orderData);
@@ -424,7 +425,7 @@ const ListingDetailPage = () => {
                                         type="text"
                                         value={shippingData.city}
                                         onChange={(e) => setShippingData({...shippingData, city: e.target.value})}
-                                        placeholder="Enter city (e.g., Võru)"
+                                        placeholder="Enter city (e.g., Tartu)"
                                         className="form-input"
                                         required
                                     />

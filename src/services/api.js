@@ -116,16 +116,10 @@ export const ordersAPI = {
         console.log('Creating order with data:', data);
         console.log('Full API URL will be:', `${API_BASE_URL}/orders`);
         
-        // Ensure data is properly formatted with all required fields
-        const orderData = {
-            listingId: parseInt(data.listingId),
-            quantity: parseInt(data.quantity) || 1,
-            shippingAddress: data.shippingAddress
-        };
+        // Data should already be properly formatted with nested shippingAddress
+        console.log('Order data structure:', JSON.stringify(data, null, 2));
         
-        console.log('Formatted order data:', orderData);
-        
-        return api.post('/orders', orderData);
+        return api.post('/orders', data);
     },
     getById: (id) => api.get(`/orders/${id}`),
     update: (id, data) => api.patch(`/orders/${id}`, data),
