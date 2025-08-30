@@ -13,8 +13,15 @@ const ListingDetailPage = () => {
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [currentUser, setCurrentUser] = useState(null);
-    const [shippingAddress, setShippingAddress] = useState('');
     const [showOrderForm, setShowOrderForm] = useState(false);
+    
+    // Structured shipping address
+    const [shippingData, setShippingData] = useState({
+        fullName: '',
+        street: '',
+        city: '',
+        country: ''
+    });
 
     useEffect(() => {
         fetchListing().catch(console.error);
@@ -98,16 +105,32 @@ const ListingDetailPage = () => {
                 return;
             }
 
-            if (!shippingAddress.trim()) {
-                alert('Please enter a shipping address');
+            // Validate all shipping fields
+            if (!shippingData.fullName.trim()) {
+                alert('Please enter your full name');
                 return;
             }
+            if (!shippingData.street.trim()) {
+                alert('Please enter street address');
+                return;
+            }
+            if (!shippingData.city.trim()) {
+                alert('Please enter city');
+                return;
+            }
+            if (!shippingData.country.trim()) {
+                alert('Please enter country');
+                return;
+            }
+
+            // Format shipping address as required by backend
+            const shippingAddress = `${shippingData.fullName}\n${shippingData.street}\n${shippingData.city}\n${shippingData.country}`;
 
             // Create order data with all required fields
             const orderData = {
                 listingId: parseInt(listing.id),
                 quantity: parseInt(orderQuantity) || 1,
-                shippingAddress: shippingAddress.trim()
+                shippingAddress: shippingAddress
             };
 
             console.log('Order request data:', orderData);
@@ -118,7 +141,12 @@ const ListingDetailPage = () => {
             
             alert('Order created successfully!');
             setShowOrderForm(false);
-            setShippingAddress('');
+            setShippingData({
+                fullName: '',
+                street: '',
+                city: '',
+                country: ''
+            });
             navigate('/orders');
         } catch (error) {
             console.error('Order creation error:', error);
@@ -358,25 +386,73 @@ const ListingDetailPage = () => {
                             </div>
 
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">
-                                    Shipping Address *
-                                </label>
-                                <textarea
-                                    value={shippingAddress}
-                                    onChange={(e) => setShippingAddress(e.target.value)}
-                                    placeholder="Enter your full shipping address..."
-                                    className="form-input h-24 resize-none"
-                                    required
-                                />
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Please include your full name, street address, city, state, and postal code.
-                                </p>
+                                <h4 className="text-md font-semibold mb-3">Shipping Information</h4>
+                                
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                                        Full Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={shippingData.fullName}
+                                        onChange={(e) => setShippingData({...shippingData, fullName: e.target.value})}
+                                        placeholder="Enter your full name"
+                                        className="form-input"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                                        Street Address *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={shippingData.street}
+                                        onChange={(e) => setShippingData({...shippingData, street: e.target.value})}
+                                        placeholder="Enter street address (e.g., Vilja tn 6)"
+                                        className="form-input"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                                        City *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={shippingData.city}
+                                        onChange={(e) => setShippingData({...shippingData, city: e.target.value})}
+                                        placeholder="Enter city (e.g., Võru)"
+                                        className="form-input"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                                        Country *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={shippingData.country}
+                                        onChange={(e) => setShippingData({...shippingData, country: e.target.value})}
+                                        placeholder="Enter country (e.g., Estonia)"
+                                        className="form-input"
+                                        required
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex gap-4">
                                 <button
                                     onClick={handleOrder}
-                                    disabled={orderLoading || !listing || !shippingAddress.trim()}
+                                    disabled={orderLoading || !listing || 
+                                        !shippingData.fullName.trim() || 
+                                        !shippingData.street.trim() || 
+                                        !shippingData.city.trim() || 
+                                        !shippingData.country.trim()}
                                     className="btn btn-primary"
                                 >
                                     {orderLoading ? 'Creating Order...' : 'Create Order'}
@@ -384,7 +460,12 @@ const ListingDetailPage = () => {
                                 <button
                                     onClick={() => {
                                         setShowOrderForm(false);
-                                        setShippingAddress('');
+                                        setShippingData({
+                                            fullName: '',
+                                            street: '',
+                                            city: '',
+                                            country: ''
+                                        });
                                     }}
                                     disabled={orderLoading}
                                     className="btn btn-secondary"
