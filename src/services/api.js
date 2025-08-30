@@ -116,10 +116,11 @@ export const ordersAPI = {
         console.log('Creating order with data:', data);
         console.log('Full API URL will be:', `${API_BASE_URL}/orders`);
         
-        // Ensure data is properly formatted
+        // Ensure data is properly formatted with all required fields
         const orderData = {
             listingId: parseInt(data.listingId),
-            quantity: parseInt(data.quantity) || 1
+            quantity: parseInt(data.quantity) || 1,
+            shippingAddress: data.shippingAddress
         };
         
         console.log('Formatted order data:', orderData);

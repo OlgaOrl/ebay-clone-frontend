@@ -13,6 +13,8 @@ const ListingDetailPage = () => {
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [currentUser, setCurrentUser] = useState(null);
+    const [shippingAddress, setShippingAddress] = useState('');
+    const [showOrderForm, setShowOrderForm] = useState(false);
 
     useEffect(() => {
         fetchListing().catch(console.error);
@@ -96,29 +98,31 @@ const ListingDetailPage = () => {
                 return;
             }
 
-            // Create order data with only required fields
+            if (!shippingAddress.trim()) {
+                alert('Please enter a shipping address');
+                return;
+            }
+
+            // Create order data with all required fields
             const orderData = {
-                listingId: parseInt(listing.id), // Ensure it's a number
-                quantity: parseInt(orderQuantity) || 1 // Ensure it's a number, default to 1
+                listingId: parseInt(listing.id),
+                quantity: parseInt(orderQuantity) || 1,
+                shippingAddress: shippingAddress.trim()
             };
 
             console.log('Order request data:', orderData);
-            console.log('Request headers will include:', {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token.substring(0, 20)}...` // Log partial token for debugging
-            });
 
             const response = await ordersAPI.create(orderData);
             
             console.log('Order creation response:', response);
             
             alert('Order created successfully!');
+            setShowOrderForm(false);
+            setShippingAddress('');
             navigate('/orders');
         } catch (error) {
             console.error('Order creation error:', error);
             console.error('Error response data:', error.response?.data);
-            console.error('Error status:', error.response?.status);
-            console.error('Error headers:', error.response?.headers);
             
             // Handle specific error cases
             if (error.response?.status === 400) {
@@ -302,31 +306,94 @@ const ListingDetailPage = () => {
                     </div>
 
                     <h3 className="text-lg font-bold mb-4">Place Order</h3>
-                    <div className="flex items-center gap-4 mb-4">
-                        <label className="font-medium">Quantity:</label>
-                        <input
-                            type="number"
-                            min="1"
-                            max="999"
-                            value={orderQuantity}
-                            onChange={(e) => {
-                                const value = parseInt(e.target.value) || 1;
-                                setOrderQuantity(Math.max(1, value)); // Ensure minimum value of 1
-                            }}
-                            className="form-input w-24"
-                        />
-                        <span className="text-gray-600">
-                            Total: ${(listing.price * orderQuantity).toFixed(2)}
-                        </span>
-                    </div>
+                    
+                    {!showOrderForm ? (
+                        <div>
+                            <div className="flex items-center gap-4 mb-4">
+                                <label className="font-medium">Quantity:</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="999"
+                                    value={orderQuantity}
+                                    onChange={(e) => {
+                                        const value = parseInt(e.target.value) || 1;
+                                        setOrderQuantity(Math.max(1, value));
+                                    }}
+                                    className="form-input w-24"
+                                />
+                                <span className="text-gray-600">
+                                    Total: ${(listing.price * orderQuantity).toFixed(2)}
+                                </span>
+                            </div>
 
-                    <button
-                        onClick={handleOrder}
-                        disabled={orderLoading || !listing}
-                        className="btn btn-primary"
-                    >
-                        {orderLoading ? 'Creating Order...' : 'Create Order'}
-                    </button>
+                            <button
+                                onClick={() => setShowOrderForm(true)}
+                                disabled={!listing}
+                                className="btn btn-primary"
+                            >
+                                Proceed to Order
+                            </button>
+                        </div>
+                    ) : (
+                        <div>
+                            <div className="mb-4">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <label className="font-medium">Quantity:</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="999"
+                                        value={orderQuantity}
+                                        onChange={(e) => {
+                                            const value = parseInt(e.target.value) || 1;
+                                            setOrderQuantity(Math.max(1, value));
+                                        }}
+                                        className="form-input w-24"
+                                    />
+                                    <span className="text-gray-600">
+                                        Total: ${(listing.price * orderQuantity).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">
+                                    Shipping Address *
+                                </label>
+                                <textarea
+                                    value={shippingAddress}
+                                    onChange={(e) => setShippingAddress(e.target.value)}
+                                    placeholder="Enter your full shipping address..."
+                                    className="form-input h-24 resize-none"
+                                    required
+                                />
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Please include your full name, street address, city, state, and postal code.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={handleOrder}
+                                    disabled={orderLoading || !listing || !shippingAddress.trim()}
+                                    className="btn btn-primary"
+                                >
+                                    {orderLoading ? 'Creating Order...' : 'Create Order'}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowOrderForm(false);
+                                        setShippingAddress('');
+                                    }}
+                                    disabled={orderLoading}
+                                    className="btn btn-secondary"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
