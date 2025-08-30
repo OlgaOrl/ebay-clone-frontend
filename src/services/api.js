@@ -21,13 +21,16 @@ api.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Log the request for debugging
-    console.log('API Request:', {
+    // Enhanced logging for debugging
+    console.log('API Request Details:', {
         method: config.method?.toUpperCase(),
         url: config.url,
         baseURL: config.baseURL,
         fullURL: `${config.baseURL}${config.url}`,
-        headers: config.headers,
+        headers: {
+            'Content-Type': config.headers['Content-Type'],
+            'Authorization': config.headers.Authorization ? `Bearer ${config.headers.Authorization.substring(7, 27)}...` : 'None'
+        },
         data: config.data
     });
     
@@ -41,6 +44,7 @@ api.interceptors.response.use(
             status: response.status,
             statusText: response.statusText,
             url: response.config.url,
+            method: response.config.method?.toUpperCase(),
             data: response.data
         });
         return response;
@@ -53,6 +57,7 @@ api.interceptors.response.use(
             method: error.config?.method?.toUpperCase(),
             baseURL: error.config?.baseURL,
             fullURL: error.config ? `${error.config.baseURL}${error.config.url}` : 'Unknown',
+            requestData: error.config?.data,
             responseData: error.response?.data,
             message: error.message,
             code: error.code
@@ -107,7 +112,20 @@ export const listingsAPI = {
 
 export const ordersAPI = {
     getAll: () => api.get('/orders'),
-    create: (data) => api.post('/orders', data),
+    create: (data) => {
+        console.log('Creating order with data:', data);
+        console.log('Full API URL will be:', `${API_BASE_URL}/orders`);
+        
+        // Ensure data is properly formatted
+        const orderData = {
+            listingId: parseInt(data.listingId),
+            quantity: parseInt(data.quantity) || 1
+        };
+        
+        console.log('Formatted order data:', orderData);
+        
+        return api.post('/orders', orderData);
+    },
     getById: (id) => api.get(`/orders/${id}`),
     update: (id, data) => api.patch(`/orders/${id}`, data),
     cancel: (id, data) => api.patch(`/orders/${id}/cancel`, data),

@@ -84,18 +84,54 @@ const ListingDetailPage = () => {
 
         try {
             setOrderLoading(true);
+            
+            // Ensure we have valid data
+            if (!listing || !listing.id) {
+                alert('Listing data not available');
+                return;
+            }
+
+            if (!orderQuantity || orderQuantity < 1) {
+                alert('Please enter a valid quantity');
+                return;
+            }
+
+            // Create order data with only required fields
             const orderData = {
-                userId: 1, // In real app get from token
-                listingId: parseInt(id),
-                quantity: orderQuantity,
-                totalPrice: listing.price * orderQuantity
+                listingId: parseInt(listing.id), // Ensure it's a number
+                quantity: parseInt(orderQuantity) || 1 // Ensure it's a number, default to 1
             };
 
-            await ordersAPI.create(orderData);
+            console.log('Order request data:', orderData);
+            console.log('Request headers will include:', {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token.substring(0, 20)}...` // Log partial token for debugging
+            });
+
+            const response = await ordersAPI.create(orderData);
+            
+            console.log('Order creation response:', response);
+            
             alert('Order created successfully!');
             navigate('/orders');
         } catch (error) {
-            alert('Failed to create order');
+            console.error('Order creation error:', error);
+            console.error('Error response data:', error.response?.data);
+            console.error('Error status:', error.response?.status);
+            console.error('Error headers:', error.response?.headers);
+            
+            // Handle specific error cases
+            if (error.response?.status === 400) {
+                const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Invalid request data';
+                alert(`Failed to create order: ${errorMessage}`);
+            } else if (error.response?.status === 401) {
+                localStorage.removeItem('token');
+                navigate('/login');
+            } else if (error.response?.status === 404) {
+                alert('Listing not found or no longer available');
+            } else {
+                alert('Failed to create order. Please try again.');
+            }
         } finally {
             setOrderLoading(false);
         }
@@ -271,8 +307,12 @@ const ListingDetailPage = () => {
                         <input
                             type="number"
                             min="1"
+                            max="999"
                             value={orderQuantity}
-                            onChange={(e) => setOrderQuantity(parseInt(e.target.value) || 1)}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value) || 1;
+                                setOrderQuantity(Math.max(1, value)); // Ensure minimum value of 1
+                            }}
                             className="form-input w-24"
                         />
                         <span className="text-gray-600">
@@ -282,7 +322,7 @@ const ListingDetailPage = () => {
 
                     <button
                         onClick={handleOrder}
-                        disabled={orderLoading}
+                        disabled={orderLoading || !listing}
                         className="btn btn-primary"
                     >
                         {orderLoading ? 'Creating Order...' : 'Create Order'}
