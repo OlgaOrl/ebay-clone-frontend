@@ -34,6 +34,17 @@ const OrdersPage = () => {
                 }
             }
             
+            // Debug price information for each order
+            ordersArray.forEach((order, index) => {
+                console.log(`Order ${index + 1} price data:`, {
+                    id: order.id,
+                    totalPrice: order.totalPrice,
+                    priceType: typeof order.totalPrice,
+                    quantity: order.quantity,
+                    listingId: order.listingId
+                });
+            });
+            
             console.log('Final orders array:', ordersArray);
             setOrders(ordersArray);
         } catch (error) {
@@ -92,6 +103,16 @@ const OrdersPage = () => {
             case 'cancelled': return 'text-red-600 bg-red-100';
             default: return 'text-gray-600 bg-gray-100';
         }
+    };
+
+    const formatPrice = (price) => {
+        // Ensure we have a valid number
+        const numPrice = parseFloat(price);
+        if (isNaN(numPrice)) {
+            console.warn('Invalid price value:', price);
+            return '0.00';
+        }
+        return numPrice.toFixed(2);
     };
 
     if (loading) {
@@ -161,8 +182,14 @@ const OrdersPage = () => {
                                             {order.status}
                                         </span>
                                         <p className="text-lg font-bold text-gray-900 mt-1">
-                                            ${order.totalPrice?.toFixed(2) || '0.00'}
+                                            ${formatPrice(order.totalPrice)}
                                         </p>
+                                        {/* Debug info - remove in production */}
+                                        {process.env.NODE_ENV === 'development' && (
+                                            <p className="text-xs text-gray-400">
+                                                Raw: {JSON.stringify(order.totalPrice)}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 

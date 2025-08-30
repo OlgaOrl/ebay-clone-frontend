@@ -96,6 +96,16 @@ const OrderDetailPage = () => {
         }
     };
 
+    const formatPrice = (price) => {
+        // Ensure we have a valid number
+        const numPrice = parseFloat(price);
+        if (isNaN(numPrice)) {
+            console.warn('Invalid price value:', price);
+            return '0.00';
+        }
+        return numPrice.toFixed(2);
+    };
+
     if (loading) {
         return (
             <div className="max-w-4xl mx-auto py-8">
@@ -179,7 +189,7 @@ const OrderDetailPage = () => {
                                 </div>
                                 <div className="flex justify-between">
                                     <dt className="text-sm text-gray-600">Total Price:</dt>
-                                    <dd className="text-sm font-medium text-gray-900">${order.totalPrice?.toFixed(2)}</dd>
+                                    <dd className="text-sm font-medium text-gray-900">${formatPrice(order.totalPrice)}</dd>
                                 </div>
                             </dl>
                         </div>
